@@ -101,7 +101,7 @@ def parse_cppcheck(file_name: str) -> Dict[str, List[CppcheckError]]:
 
     return errors
 
-def generate_test_suites(errors: Dict[str, List[CppcheckError]]) -> ElementTree.ElementTree:
+def generate_test_suite_bitbucket(errors: Dict[str, List[CppcheckError]]) -> ElementTree.ElementTree:
     """Converts parsed Cppcheck errors into JUnit XML tree formatted for Bitbucket Pipelines.
 
     Args:
@@ -216,7 +216,7 @@ def main() -> ExitStatus:  # pragma: no cover
         return ExitStatus.failure
 
     if len(errors) > 0:
-        tree = generate_test_suite(errors)
+        tree = bitbucket ? generate_test_suite_bitbucket(errors) : generate_test_suite(errors)
         tree.write(args.output_file, encoding="utf-8", xml_declaration=True)
         return args.error_exitcode
     else:
