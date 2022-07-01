@@ -128,18 +128,18 @@ def generate_test_suite_bitbucket(errors: Dict[str, List[CppcheckError]]) -> Ele
             test_case = ElementTree.SubElement(
                 test_suite,
                 "testcase",
-                classname=f"{error.line}: ({error.severity})",
-                name=error.message,
+                classname=os.path.basepath(file_name),
+                name=f"({error.severity}) on line {error.line}",
                 line=str(error.line)
             )
-            
+
             ElementTree.SubElement(
                 test_case,
                 "error",
                 type=error.severity,
                 file=os.path.relpath(error.file) if error.file else "",
                 line=str(error.line),
-                message=error.verbose
+                message=error.message
             )
 
     return ElementTree.ElementTree(test_suites)
