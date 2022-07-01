@@ -110,34 +110,38 @@ def generate_test_suite_bitbucket(errors: Dict[str, List[CppcheckError]]) -> Ele
     Returns:
         XML test suite.
     """
-    test_suite = ElementTree.Element("testsuites")
-    test_suite.attrib["name"] = "Bitbucket errors"
-    test_suite.attrib["timestamp"] = datetime.isoformat(datetime.now())
-    test_suite.attrib["hostname"] = gethostname()
-    test_suite.attrib["tests"] = str(len(errors))
-    test_suite.attrib["failures"] = str(0)
-    test_suite.attrib["errors"] = str(len(errors))
-    test_suite.attrib["time"] = str(1)
-
+    current_time =  datetime.isoformat(datetime.now())
+    test_suites = ElementTree.Element("testsuites")
     for file_name, errors in errors.items():
-        test_case = ElementTree.SubElement(
-            test_suite,
-            "testcase",
+        test_suite = ElementTree.SubElement(
+            test_suites,
+            "testsuite",
             name=os.path.relpath(file_name) if file_name else "Cppcheck error",
-            classname="Cppcheck error",
-            time=str(1),
+            timestamp=current_time,
+            hostname=gethostname(),
+            tests=str(len(errors)),
+            failures=str(0),
+            errors=str(len(errors)),
+            time=str(1)
         )
         for error in errors:
+            test_case = ElementTree.SubElement(
+                test_suite,
+                "testcase",
+                classname=f"{error.line}: ({error.severity})",
+                name=error.message,
+                line=str(error.line)
+            )
             ElementTree.SubElement(
                 test_case,
                 "error",
-                type="",
+                type=error.severity,
                 file=os.path.relpath(error.file) if error.file else "",
                 line=str(error.line),
-                message=f"{error.line}: ({error.severity}) {error.message}",
+                message=error.verbose
             )
 
-    return ElementTree.ElementTree(test_suite)
+    return ElementTree.ElementTree(test_suites)
 
 
 def generate_test_suite(errors: Dict[str, List[CppcheckError]]) -> ElementTree.ElementTree:
