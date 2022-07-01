@@ -54,6 +54,7 @@ def parse_arguments() -> argparse.Namespace:
         help="If errors are found, "
         f"integer <n> is returned instead of default {ExitStatus.success}.",
     )
+    parser.add_argument("--bitbucket", action='store_true', help="Formats output for use in Bitbucket Pipelines");
     return parser.parse_args()
 
 
@@ -99,6 +100,44 @@ def parse_cppcheck(file_name: str) -> Dict[str, List[CppcheckError]]:
         errors[error.file].append(error)
 
     return errors
+
+def generate_test_suites(errors: Dict[str, List[CppcheckError]]) -> ElementTree.ElementTree:
+    """Converts parsed Cppcheck errors into JUnit XML tree formatted for Bitbucket Pipelines.
+
+    Args:
+        errors: Parsed cppcheck errors.
+
+    Returns:
+        XML test suite.
+    """
+    test_suite = ElementTree.Element("testsuites")
+    test_suite.attrib["name"] = "Bitbucket errors"
+    test_suite.attrib["timestamp"] = datetime.isoformat(datetime.now())
+    test_suite.attrib["hostname"] = gethostname()
+    test_suite.attrib["tests"] = str(len(errors))
+    test_suite.attrib["failures"] = str(0)
+    test_suite.attrib["errors"] = str(len(errors))
+    test_suite.attrib["time"] = str(1)
+
+    for file_name, errors in errors.items():
+        test_case = ElementTree.SubElement(
+            test_suite,
+            "testcase",
+            name=os.path.relpath(file_name) if file_name else "Cppcheck error",
+            classname="Cppcheck error",
+            time=str(1),
+        )
+        for error in errors:
+            ElementTree.SubElement(
+                test_case,
+                "error",
+                type="",
+                file=os.path.relpath(error.file) if error.file else "",
+                line=str(error.line),
+                message=f"{error.line}: ({error.severity}) {error.message}",
+            )
+
+    return ElementTree.ElementTree(test_suite)
 
 
 def generate_test_suite(errors: Dict[str, List[CppcheckError]]) -> ElementTree.ElementTree:
