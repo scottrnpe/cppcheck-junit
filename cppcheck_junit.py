@@ -216,7 +216,7 @@ def main() -> ExitStatus:  # pragma: no cover
         return ExitStatus.failure
 
     if len(errors) > 0:
-        tree = bitbucket ? generate_test_suite_bitbucket(errors) : generate_test_suite(errors)
+        tree = generate_test_suite_bitbucket(errors) if args.bitbucket else generate_test_suite(errors)
         tree.write(args.output_file, encoding="utf-8", xml_declaration=True)
         return args.error_exitcode
     else:
